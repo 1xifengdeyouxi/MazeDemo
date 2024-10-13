@@ -263,13 +263,6 @@ void findPaths(int maze[SIZE][SIZE], Stack* path, int x, int y, int endX, int en
             visited[newX][newY] = 0;   // 取消访问标记，便于其他路径探索
         }
     }
-
-    // 如果没有找到通路，标记为死路
-    /*
-    if (maze[x][y] == 0) {
-        maze[x][y] = 3; // 将死路标记为 3（白色）
-    }
-    */
 }
 
 
@@ -318,6 +311,14 @@ void printAllPathsAndShortest(int maze[SIZE][SIZE]) {
     // 开始寻找所有从起点到终点的路径
     findPaths(maze, &path, 0, 0, SIZE - 1, SIZE - 1, 1);
 
+    //保存原来的迷宫
+    int temp_maze[SIZE][SIZE] = { 0 };
+    // 使用嵌套循环保存数组
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            temp_maze[i][j] = maze[i][j];
+        }
+    }
     //将所有的通路变为蓝色
     markAllPaths(maze);
 
@@ -333,9 +334,10 @@ void printAllPathsAndShortest(int maze[SIZE][SIZE]) {
         printf("\n该迷宫所有通路为：\n");
         printMaze(maze);         // 打印包含所有通路的迷宫
 
-        markShortestPath(maze);  // 标记最短路径
+
+        markShortestPath(temp_maze);  // 标记最短路径
         printf("\n该迷宫最短通路为：\n");
-        printMaze(maze);         // 打印包含最短路径的迷宫
+        printMaze(temp_maze);         // 打印包含最短路径的迷宫
     }
     else {
         printf("该迷宫无通路\n");
@@ -391,7 +393,7 @@ int main() {
             break;
         }
         case 4: {
-            generateMaze(maze, 0.7);  // 随机生成迷宫
+            generateMaze(maze, 0.65);  // 随机生成迷宫
             printf("随机生成迷宫:\n");
             printMaze(maze);  // 打印随机生成的迷宫
             printAllPathsAndShortest(maze);
