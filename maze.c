@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "maze.h"
 
 #define SIZE 7 // 定义迷宫的大小（7×7）
 
