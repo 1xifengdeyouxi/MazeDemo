@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "maze.h"
 
 #define SIZE 7 // 定义迷宫的大小（7×7）
 
@@ -106,16 +107,84 @@ void generateMaze(int maze[SIZE][SIZE], float pathProbability) {
     maze[SIZE - 2][SIZE - 1] = 0;
 }
 
-// 打印迷宫的函数，用不同颜色显示通路和障碍
+// 生成迷宫一：有解的迷宫
+void generateMazeOne(int maze[SIZE][SIZE]) {
+    int mazeOne[SIZE][SIZE] = {
+        {0, 1, 0, 0, 0, 1, 0},
+        {0, 1, 0, 1, 0, 1, 0},
+        {0, 0, 0, 1, 0, 0, 0},
+        {1, 1, 0, 0, 1, 1, 1},
+        {0, 0, 0, 1, 0, 0, 0},
+        {0, 1, 1, 1, 0, 1, 0},
+        {0, 0, 0, 0, 0, 0, 0}
+    };
+
+    // 将固定的迷宫复制到传入的迷宫数组
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            maze[i][j] = mazeOne[i][j];
+        }
+    }
+}
+
+// 生成迷宫二：有解的迷宫
+void generateMazeTwo(int maze[SIZE][SIZE]) {
+    int mazeTwo[SIZE][SIZE] = {
+        {0, 0, 1, 0, 0, 1, 0},
+        {1, 0, 1, 0, 1, 0, 0},
+        {1, 0, 0, 0, 1, 1, 0},
+        {0, 1, 1, 0, 0, 0, 0},
+        {0, 0, 0, 1, 1, 1, 0},
+        {1, 1, 0, 0, 0, 1, 0},
+        {0, 0, 0, 1, 0, 0, 0}
+    };
+
+    // 将固定的迷宫复制到传入的迷宫数组
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            maze[i][j] = mazeTwo[i][j];
+        }
+    }
+}
+
+// 生成迷宫三：无解的迷宫（死路）
+void generateMazeThree(int maze[SIZE][SIZE]) {
+    int mazeThree[SIZE][SIZE] = {
+        {0, 1, 1, 0, 0, 1, 1},
+        {0, 0, 0, 1, 0, 1, 1},
+        {1, 0, 0, 0, 0, 1, 1},
+        {1, 0, 1, 0, 0, 0, 0},
+        {1, 1, 1, 1, 0, 1, 1},
+        {1, 0, 1, 1, 0, 1, 0},
+        {1, 1, 0, 0, 1, 0, 0}
+    };
+
+    // 将固定的迷宫复制到传入的迷宫数组
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            maze[i][j] = mazeThree[i][j];
+        }
+    }
+}
+
+
+
+// 打印迷宫的函数，用不同颜色显示通路、障碍、死路、最短路径
 void printMaze(int maze[SIZE][SIZE]) {
     for (int i = 0; i < SIZE; i++) {
-        // 打印迷宫的方块行
         for (int j = 0; j < SIZE; j++) {
             if (maze[i][j] == 0) {
-                printf("\033[44m  \033[0m"); // 蓝色小方块（通路）
+
+                printf("\033[47m  \033[0m"); // 白色小方块（死路）
             }
-            else {
+            else if (maze[i][j] == 1) {
                 printf("\033[41m  \033[0m"); // 红色小方块（障碍）
+            }
+            else if (maze[i][j] == 2) {
+                printf("\033[42m  \033[0m"); // 绿色小方块（最短路径）
+            }
+            else if (maze[i][j] == 3) {
+                printf("\033[44m  \033[0m"); // 蓝色小方块（通路）
             }
             if (j < SIZE - 1) {
                 printf("|"); // 使用竖线 '|' 作为间隔
@@ -123,7 +192,6 @@ void printMaze(int maze[SIZE][SIZE]) {
         }
         printf("\n");
 
-        // 打印分隔线，保持视觉上行与行之间的分隔
         if (i < SIZE - 1) {
             for (int j = 0; j < SIZE; j++) {
                 printf("--");  // 每个方块下面打印 '--' 表示分隔线
@@ -135,6 +203,7 @@ void printMaze(int maze[SIZE][SIZE]) {
         }
     }
 }
+
 
 // 四个方向的移动向量（右、下、左、上）
 int directions[4][2] = { {0,  1}, {1,  0}, {0,  -1}, {-1, 0} };
@@ -148,12 +217,26 @@ Stack bestPath;
 // 记录最短路径的长度，初始值设置为一个较大的值
 int minPathLength = SIZE * SIZE + 1;
 
+// 全局数组用来记录所有通路节点，初始值为0，表示该节点不是通路
+int allPaths[SIZE][SIZE] = { 0 };
+
+//全局变量记录一共有多少个通路
+int numPaths = 0;
+
 // 递归回溯法寻找所有路径
 void findPaths(int maze[SIZE][SIZE], Stack* path, int x, int y, int endX, int endY, int pathLength) {
     // 如果到达终点，输出路径
     if (x == endX && y == endY) {
+        numPaths++;
         printf("通路: ");
         printStack(path);
+
+        // 记录当前路径上的所有节点到 allPaths 数组
+        Node* current = path->top;
+        while (current) {
+            allPaths[current->x][current->y] = 1; // 将经过的节点标记为1，表示是通路
+            current = current->next;
+        }
 
         // 更新最短路径
         if (pathLength < minPathLength) {
@@ -180,17 +263,54 @@ void findPaths(int maze[SIZE][SIZE], Stack* path, int x, int y, int endX, int en
             visited[newX][newY] = 0;   // 取消访问标记，便于其他路径探索
         }
     }
+
+    // 如果没有找到通路，标记为死路
+    /*
+    if (maze[x][y] == 0) {
+        maze[x][y] = 3; // 将死路标记为 3（白色）
+    }
+    */
 }
 
-int main() {
-    int maze[SIZE][SIZE];  // 定义迷宫数组
-    generateMaze(maze, 0.6);  // 随机生成迷宫，通路的概率
-    printf("随机生成迷宫:\n");
-    printMaze(maze);  // 打印生成的迷宫
 
+// 用来标记最短路径的函数
+void markShortestPath(int maze[SIZE][SIZE]) {
+    Node* current = bestPath.top;
+    while (current) {
+        maze[current->x][current->y] = 2; // 将最短路径标记为 2（绿色）
+        current = current->next;
+    }
+}
+
+
+// 在迷宫中将所有通路变为蓝色
+void markAllPaths(int maze[SIZE][SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (allPaths[i][j] == 1) {
+                maze[i][j] = 3; // 将通路标记为 3（蓝色）
+            }
+        }
+    }
+}
+
+
+// 重置访问状态和通路数组
+void resetMazeState() {
+    memset(visited, 0, sizeof(visited));  // 清空访问数组
+    memset(allPaths, 0, sizeof(allPaths)); // 清空所有通路数组
+    initStack(&bestPath);  // 清空最短路径栈
+    minPathLength = SIZE * SIZE + 1;  // 重置最短路径长度
+    numPaths = 0;//重置共有几条通路
+}
+
+// 打印出所有路径并显示最短路径
+void printAllPathsAndShortest(int maze[SIZE][SIZE]) {
     Stack path;
     initStack(&path);
     initStack(&bestPath);
+
+    resetMazeState();  // 重置访问状态和通路数组
 
     visited[0][0] = 1;  // 标记起点为已访问
     push(&path, 0, 0);  // 将起点压入路径栈
@@ -198,14 +318,95 @@ int main() {
     // 开始寻找所有从起点到终点的路径
     findPaths(maze, &path, 0, 0, SIZE - 1, SIZE - 1, 1);
 
+    //将所有的通路变为蓝色
+    markAllPaths(maze);
+
+
+
     // 输出最短路径
     if (!isEmpty(&bestPath)) {
         printf("最短通路: ");
         printStack(&bestPath);
+
+        //输出所有路径
+        printf("\n该迷宫共有通路：%d", numPaths);
+        printf("\n该迷宫所有通路为：\n");
+        printMaze(maze);         // 打印包含所有通路的迷宫
+
+        markShortestPath(maze);  // 标记最短路径
+        printf("\n该迷宫最短通路为：\n");
+        printMaze(maze);         // 打印包含最短路径的迷宫
     }
     else {
         printf("该迷宫无通路\n");
     }
+}
 
-    return 0;
+//输入菜单
+void MazeMenu(){
+        printf("\n========================================\n");
+        printf("           请输入操作类型:\n");
+        printf("========================================\n");
+        printf("   [1] 选择迷宫一\n");
+        printf("   [2] 选择迷宫二\n");
+        printf("   [3] 选择迷宫三\n");
+        printf("   [4] 随机生成\n");
+        printf("   [5] 退出程序\n");
+        printf("========================================\n");
+        printf("输入您的选择 (1-5): ");
+}
+
+
+int main() {
+    int maze[SIZE][SIZE];  // 定义迷宫数组
+    int choice;
+
+    while (1)
+    {
+        MazeMenu();
+        scanf_s("%d", &choice);
+        getchar();  // 清除输入缓存
+
+        switch (choice)
+        {
+        case 1: {
+            generateMazeOne(maze);  // 生成迷宫一
+            printf("迷宫一:\n");
+            printMaze(maze);  // 打印迷宫一
+            printAllPathsAndShortest(maze);
+            break;
+        }
+        case 2: {
+            generateMazeTwo(maze);  // 生成迷宫二
+            printf("迷宫二:\n");
+            printMaze(maze);  // 打印迷宫二
+            printAllPathsAndShortest(maze);
+            break;
+        }
+        case 3: {
+            generateMazeThree(maze);  // 生成迷宫三
+            printf("迷宫三 (无解):\n");
+            printMaze(maze);  // 打印迷宫三
+            printAllPathsAndShortest(maze);
+            break;
+        }
+        case 4: {
+            generateMaze(maze, 0.7);  // 随机生成迷宫
+            printf("随机生成迷宫:\n");
+            printMaze(maze);  // 打印随机生成的迷宫
+            printAllPathsAndShortest(maze);
+            break;
+        }
+        case 5: {
+            printf("退出程序\n");
+            return 0;  // 退出程序
+        }
+        default:
+            printf("输入有错误");
+            break;
+        }
+
+        printf("按任意键继续... ...\n");
+        getch(); // 等待用户按下任意键
+    }
 }
